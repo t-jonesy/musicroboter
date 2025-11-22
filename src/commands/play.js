@@ -2,6 +2,7 @@ import { SlashCommandBuilder } from 'discord.js';
 import { getVoiceConnection } from '@discordjs/voice';
 import play from 'play-dl';
 import { musicQueue } from '../utils/queue.js';
+import { config } from '../config.js';
 
 export const data = new SlashCommandBuilder()
   .setName('play')
@@ -40,7 +41,6 @@ export async function execute(interaction) {
       const trackId = trackIdMatch[1];
 
       // Get Spotify access token using client credentials
-      const { config } = await import('../config.js');
       const tokenResponse = await fetch('https://accounts.spotify.com/api/token', {
         method: 'POST',
         headers: {

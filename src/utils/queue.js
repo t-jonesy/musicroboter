@@ -31,13 +31,16 @@ class MusicQueue {
     if (playNext && queue.isPlaying) {
       // Add to front of queue (position 1, right after currently playing song)
       queue.songs.splice(1, 0, song);
+      // Preload immediately since queue composition changed
+      this.preloadNextSongs(guildId);
     } else {
       // Add to end of queue
       queue.songs.push(song);
+      // Only preload if not currently playing (playSong will handle it)
+      if (!queue.isPlaying) {
+        this.preloadNextSongs(guildId);
+      }
     }
-
-    // Preload songs immediately when added to queue
-    this.preloadNextSongs(guildId);
 
     if (!queue.isPlaying) {
       await this.playSong(guildId);
