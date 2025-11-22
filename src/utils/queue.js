@@ -20,36 +20,20 @@ class MusicQueue {
         player: null,
         isPlaying: false,
         currentSong: null,
-        autoplay: false,
-        autoplayHistory: [], // Track played songs to avoid repeats
       });
     }
     return this.queues.get(guildId);
   }
 
-  async addSong(guildId, song, isUserRequested = true, playNext = false) {
+  async addSong(guildId, song, playNext = false) {
     const queue = this.getQueue(guildId);
 
-    if (isUserRequested) {
-      // User-requested songs
-      // Remove any autoplay songs from the queue
-      queue.songs = queue.songs.filter(s => s.isUserRequested !== false);
-
-      if (playNext && queue.isPlaying) {
-        // Add to front of queue (position 1, right after currently playing song)
-        queue.songs.splice(1, 0, song);
-      } else {
-        // Add to end of queue
-        queue.songs.push(song);
-      }
-
-      song.isUserRequested = true;
+    if (playNext && queue.isPlaying) {
+      // Add to front of queue (position 1, right after currently playing song)
+      queue.songs.splice(1, 0, song);
     } else {
-      // Autoplay songs only added if no user-requested songs in queue
-      if (queue.songs.length === 0) {
-        queue.songs.push(song);
-        song.isUserRequested = false;
-      }
+      // Add to end of queue
+      queue.songs.push(song);
     }
 
     // Preload songs immediately when added to queue
@@ -89,93 +73,6 @@ class MusicQueue {
     }
   }
 
-  /**
-   * Find a related song for autoplay based on the last played song
-   * @param {string} guildId - The Discord guild ID
-   * @returns {Promise<Object|null>} Related song info or null
-   */
-  async findRelatedSong(guildId) {
-    const queue = this.getQueue(guildId);
-
-    if (!queue.currentSong) {
-      return null;
-    }
-
-    try {
-      // Search for related songs using the current song's artist and title
-      const searchQuery = `${queue.currentSong.artist || ''} ${queue.currentSong.title}`.trim();
-      console.log(`[Guild ${guildId}] Searching for songs related to: ${searchQuery}`);
-
-      // Try searching with "explicit" first for better quality
-      let searched = await play.search(`${searchQuery} explicit`, {
-        limit: 10,
-        source: { youtube: 'video' }
-      });
-
-      // If no results with explicit, try without it
-      if (!searched || searched.length === 0) {
-        searched = await play.search(searchQuery, {
-          limit: 10,
-          source: { youtube: 'video' }
-        });
-      }
-
-      if (!searched || searched.length === 0) {
-        console.log(`[Guild ${guildId}] No related songs found`);
-        return null;
-      }
-
-      // Filter out songs we've already played in this session
-      let unplayed = searched.filter(result => {
-        const id = result.id || result.url;
-        return !queue.autoplayHistory.includes(id);
-      });
-
-      if (unplayed.length === 0) {
-        // Reset history if we've played everything
-        console.log(`[Guild ${guildId}] Autoplay history reset`);
-        queue.autoplayHistory = [];
-        return this.findRelatedSong(guildId);
-      }
-
-      // Prefer explicit/uncensored versions
-      const explicitResults = unplayed.filter(result =>
-        /explicit|uncensored|unedited|parental advisory/i.test(result.title)
-      );
-
-      // Use explicit results if available, otherwise use all unplayed
-      const candidatePool = explicitResults.length > 0 ? explicitResults : unplayed;
-
-      // Pick a random song from the results (not the first one which is likely the same song)
-      const randomIndex = Math.floor(Math.random() * Math.min(candidatePool.length, 5)) + 1;
-      const selectedIndex = Math.min(randomIndex, candidatePool.length - 1);
-      const result = candidatePool[selectedIndex];
-
-      const url = result.url || `https://www.youtube.com/watch?v=${result.id}`;
-      const songId = result.id || result.url;
-
-      // Add to history
-      queue.autoplayHistory.push(songId);
-
-      // Keep history size reasonable (last 50 songs)
-      if (queue.autoplayHistory.length > 50) {
-        queue.autoplayHistory.shift();
-      }
-
-      console.log(`[Guild ${guildId}] Found related song: ${result.title}`);
-
-      return {
-        title: result.title,
-        url: url,
-        artist: result.channel?.name || 'Unknown Artist',
-        duration: result.durationInSec || 0,
-        isUserRequested: false,
-      };
-    } catch (error) {
-      console.error(`[Guild ${guildId}] Error finding related song:`, error);
-      return null;
-    }
-  }
 
   /**
    * Plays the current song in the queue
@@ -185,27 +82,8 @@ class MusicQueue {
     const queue = this.getQueue(guildId);
 
     if (queue.songs.length === 0) {
-      // Store current song for autoplay search before clearing
-      const previousSong = queue.currentSong;
-
-      // Immediately clear playing state
       queue.isPlaying = false;
       queue.currentSong = null;
-
-      // Check if autoplay is enabled
-      if (queue.autoplay && previousSong) {
-        console.log(`[Guild ${guildId}] Queue empty, searching for autoplay song...`);
-        // Temporarily restore currentSong for findRelatedSong to work
-        queue.currentSong = previousSong;
-        const relatedSong = await this.findRelatedSong(guildId);
-        queue.currentSong = null; // Clear again after search
-
-        if (relatedSong) {
-          await this.addSong(guildId, relatedSong, false);
-          return; // addSong will call playSong if needed
-        }
-      }
-
       console.log(`[Guild ${guildId}] Queue finished`);
       return;
     }
@@ -312,28 +190,6 @@ class MusicQueue {
   getQueueList(guildId) {
     const queue = this.getQueue(guildId);
     return queue.songs;
-  }
-
-  /**
-   * Toggle autoplay on or off
-   * @param {string} guildId - The Discord guild ID
-   * @returns {boolean} The new autoplay state
-   */
-  toggleAutoplay(guildId) {
-    const queue = this.getQueue(guildId);
-    queue.autoplay = !queue.autoplay;
-    console.log(`[Guild ${guildId}] Autoplay ${queue.autoplay ? 'enabled' : 'disabled'}`);
-    return queue.autoplay;
-  }
-
-  /**
-   * Get autoplay state
-   * @param {string} guildId - The Discord guild ID
-   * @returns {boolean} Current autoplay state
-   */
-  getAutoplayState(guildId) {
-    const queue = this.getQueue(guildId);
-    return queue.autoplay;
   }
 }
 

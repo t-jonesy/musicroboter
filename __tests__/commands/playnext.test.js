@@ -105,7 +105,7 @@ describe('PlayNext Command', () => {
       duration: mockSearchResult.durationInSec,
       thumbnail: mockSearchResult.thumbnails[0].url,
       requestedBy: 'TestUser#1234',
-    }, true, true);
+    }, true);
   });
 
   test('should show correct position message', async () => {
@@ -148,7 +148,7 @@ describe('PlayNext Command', () => {
     expect(musicQueue.addSong).toHaveBeenCalledWith('guild-123', expect.objectContaining({
       title: mockVideoInfo.video_details.title,
       url: youtubeUrl,
-    }), true, true);
+    }), true);
   });
 
   test('should handle Spotify URL', async () => {
@@ -183,7 +183,7 @@ describe('PlayNext Command', () => {
     expect(play.search).toHaveBeenCalled();
     expect(musicQueue.addSong).toHaveBeenCalledWith('guild-123', expect.objectContaining({
       title: mockYouTubeResult.title,
-    }), true, true);
+    }), true);
   });
 
   test('should handle errors gracefully', async () => {

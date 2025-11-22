@@ -10,8 +10,7 @@ A Discord bot that plays music from Spotify (via YouTube) in voice channels with
 - Queue system with multiple songs
 - **Disk caching** - Songs are cached to disk (default 10GB) for instant playback on subsequent plays
 - **Smart preloading** - Next 2-3 songs in queue are preloaded to cache while current song plays for seamless transitions
-- **Autoplay** - Automatically queue related songs when the queue is empty (user-requested songs take priority)
-- Music controls: play, pause, resume, skip, stop, autoplay toggle
+- Music controls: play, pause, resume, skip, stop
 - View current queue and now playing information
 - High-quality audio streaming optimized for Discord via yt-dlp
 - Per-guild queue isolation - each Discord server has its own independent queue
@@ -24,9 +23,8 @@ A Discord bot that plays music from Spotify (via YouTube) in voice channels with
 - `/resume` - Resume the paused song
 - `/skip` - Skip the current song
 - `/stop` - Stop playing and clear the queue
-- `/queue` - Show the current music queue (autoplay songs marked with 🎵)
+- `/queue` - Show the current music queue
 - `/nowplaying` - Show information about the currently playing song
-- `/autoplay` - Toggle autoplay on/off for related songs when queue is empty
 
 ## Prerequisites
 
@@ -186,17 +184,6 @@ MusicRoboter implements a sophisticated LRU (Least Recently Used) disk cache:
 
 This provides seamless transitions between songs and eliminates re-downloading.
 
-### Autoplay System
-
-When enabled, the autoplay feature keeps the music going automatically:
-
-1. **User songs take priority** - If you add a song while autoplay is queued, autoplay songs are removed
-2. **Smart song selection** - When the queue is empty, the bot searches for songs similar to what just played
-3. **History tracking** - The bot tracks the last 50 songs to avoid repetition
-4. **Automatic queueing** - Related songs are automatically added when the user queue is empty
-
-Autoplay songs are clearly marked with a 🎵 icon in the queue display.
-
 ### Tech Stack
 
 - **Discord.js v14** - Discord API integration with slash commands
@@ -224,13 +211,12 @@ npm run test:coverage
 
 ### Test Coverage
 
-- **Command tests** - All slash commands (play, playnext, pause, resume, skip, stop, queue, nowplaying, autoplay)
+- **Command tests** - All slash commands (play, playnext, pause, resume, skip, stop, queue, nowplaying)
 - **Queue management tests** - Queue operations, player setup, connection handling
 - **Caching tests** - Covered by queue tests (cache mocked for unit tests)
-- **Autoplay tests** - Autoplay toggle, related song search, queue priority, history tracking
 - **Integration tests** - Spotify API authentication and track fetching
 
-Current test status: **76 passing unit tests, 1 passing integration test**
+Current test status: **54 passing unit tests**
 
 ## Troubleshooting
 
@@ -278,8 +264,7 @@ musicroboter/
 │   │   ├── skip.js           # Skip current song
 │   │   ├── stop.js           # Stop and clear queue
 │   │   ├── queue.js          # Show queue
-│   │   ├── nowplaying.js     # Show current song
-│   │   └── autoplay.js       # Toggle autoplay
+│   │   └── nowplaying.js     # Show current song
 │   └── utils/
 │       └── queue.js          # Queue management with preloading
 ├── __tests__/                # Test suite

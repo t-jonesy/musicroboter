@@ -129,7 +129,7 @@ export async function execute(interaction) {
     }
 
     // Add to front of queue (playNext = true)
-    await musicQueue.addSong(interaction.guildId, song, true, true);
+    await musicQueue.addSong(interaction.guildId, song, true);
 
     const queueList = musicQueue.getQueueList(interaction.guildId);
     if (queueList.length === 1) {
